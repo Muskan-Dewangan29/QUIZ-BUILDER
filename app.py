@@ -26,8 +26,21 @@ def index():
     if request.method == "POST":
         difficulty = request.form.get("difficulty")
         count = request.form.get("count")
+        mode = request.form.get("mode", "practice")   # exam/practice
+        prev_score = request.form.get("score")        # for adaptive
         count = int(count) if count else 5
-
+        # ✅ Adaptive Difficulty
+        if difficulty == "Adaptive" and prev_score:
+            try:
+                prev_score = int(prev_score)
+                if prev_score > count * 0.7:
+                    difficulty = "Hard"
+                elif prev_score < count * 0.4:
+                    difficulty = "Easy"
+                else:
+                    difficulty = "Medium"
+            except:
+                difficulty = "Medium"
         topic = request.form.get("topic", "").strip()
 
         pdf_file = request.files.get("pdf_file")
@@ -112,7 +125,7 @@ def index():
         2. Questions must be from the text only.
         3. Do not repeat questions.
         4. Do not add extra commentary.
-
+        5. Add 1-2 trusted reference links (Wikipedia, GeeksforGeeks, official docs)
         TEXT:
         {extracted_text}
         """
@@ -130,7 +143,10 @@ def index():
         C) ...
         D) ...
         Answer: <A/B/C/D>
-        Explanation: <1 line>
+        Explanation:
+        - Why correct answer is right
+        - Why other options are wrong (brief)
+        5. Add 1-2 trusted reference links (Wikipedia, GeeksforGeeks, official docs)
         """
 
 
@@ -140,7 +156,10 @@ def index():
         )
 
         mcqs = response.choices[0].message.content
-        mcqs = f"Source Used: {source_used}\n\n" + mcqs
+        mcqs = f"Source Used: {source_used} | Mode: {mode} | Level: {difficulty}\n\n" + mcqs
+
+    if mcqs:
+        return render_template("result.html", mcqs=mcqs, mode=mode)
 
     return render_template("index.html", mcqs=mcqs)
 
@@ -152,19 +171,37 @@ def chat():
 
     user_message = data.get("message")
     context = data.get("context")
+    lang = data.get("lang", "en")
+    if lang == "hi":
+        prompt = f"""
+    You are a helpful teacher who explains in simple Hindi.
 
-    prompt = f"""
-You are a helpful teacher.
+    Context:
+    {context}
 
-Context:
-{context}
+    Student Question:
+    {user_message}
 
-Student Question:
-{user_message}
+    Explain in simple Hindi (Hinglish allowed).
+    Make it easy for Indian students.
+    """
+    else:
+        prompt = f"""
+    You are a helpful teacher.
 
-Explain clearly in simple terms.
-Also explain why the correct answer is right and others are wrong.
-"""
+    Context:
+    {context}
+
+    Student Question:
+    {user_message}
+
+    Explain clearly in simple English.
+
+    Also include:
+    - Why correct answer is right
+    - Why other options are wrong
+    - Short concept summary
+    """
 
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
@@ -190,8 +227,8 @@ Also explain why the correct answer is right and others are wrong.
     # Optional fallback (for topic-based answers)
     if not sources:
         sources = [
-            "https://en.wikipedia.org/",
-            "https://www.geeksforgeeks.org/"
+            "https://en.wikipedia.org/wiki/" + user_message.replace(" ", "_"),
+            "https://www.geeksforgeeks.org/" + user_message.replace(" ", "-").lower()
         ]
 
     return jsonify({
