@@ -70,7 +70,25 @@ def index():
 
         # ✅ LIMIT extracted text (prevents 413 error)
         extracted_text = extracted_text.strip()[:6000]
+        # ✅ Map level to detailed instruction
+        level_instruction = ""
 
+        if difficulty:
+            level_instruction = f"""
+            The MCQs must strictly follow this exam level: {difficulty}
+
+            - If GATE: Focus on conceptual, numerical, and application-based questions.
+            - If NET: Include theoretical, conceptual, and research-oriented questions.
+            - If UPSC/CGPSC: Focus on factual + analytical + current-affairs style.
+            - If Bloom's Taxonomy:
+                * Remembering: Direct facts
+                * Understanding: Concept clarity
+                * Applying: Problem-solving
+                * Analyzing: Comparison & reasoning
+                * Evaluating: Judgement-based
+                * Creating: Scenario-based
+            - Maintain the exact tone and difficulty of the selected level.
+            """
         # ✅ Build prompt
         if extracted_text:
             prompt = f"""
@@ -79,7 +97,7 @@ def index():
         Task:
         Generate exactly {count} high-quality MCQs from the given text.
 
-        Difficulty: {difficulty}
+        {level_instruction}
 
         Rules:
         1. Output format MUST be:
@@ -103,7 +121,7 @@ def index():
         You are an expert exam question setter.
 
         Generate exactly {count} MCQs on this topic: {topic}
-        Difficulty: {difficulty}
+        {level_instruction}
 
         Format:
         Q1) ...
@@ -126,6 +144,59 @@ def index():
 
     return render_template("index.html", mcqs=mcqs)
 
+from flask import jsonify
 
+@app.route("/chat", methods=["POST"])
+def chat():
+    data = request.get_json()
+
+    user_message = data.get("message")
+    context = data.get("context")
+
+    prompt = f"""
+You are a helpful teacher.
+
+Context:
+{context}
+
+Student Question:
+{user_message}
+
+Explain clearly in simple terms.
+Also explain why the correct answer is right and others are wrong.
+"""
+
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    reply = response.choices[0].message.content
+
+    # ✅ Add basic sources (you can improve later)
+    sources = []
+
+    # If context came from MCQs (file-based)
+    if context:
+        if "PDF File" in context:
+            sources.append("Uploaded PDF File")
+        elif "TXT File" in context:
+            sources.append("Uploaded TXT File")
+        elif "Image (OCR)" in context:
+            sources.append("Extracted from Image (OCR)")
+        else:
+            sources.append("Generated from provided content")
+
+    # Optional fallback (for topic-based answers)
+    if not sources:
+        sources = [
+            "https://en.wikipedia.org/",
+            "https://www.geeksforgeeks.org/"
+        ]
+
+    return jsonify({
+        "reply": reply,
+        "sources": sources
+    })
 if __name__ == "__main__":
     app.run(debug=True)
