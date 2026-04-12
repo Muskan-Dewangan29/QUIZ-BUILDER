@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from groq import Groq
 import os
@@ -13,12 +13,6 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 app = Flask(__name__)
 
-# ✅ If you are on Windows, uncomment and set this path:
-# pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
-
-
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     mcqs = ""
@@ -26,9 +20,11 @@ def index():
     if request.method == "POST":
         difficulty = request.form.get("difficulty")
         count = request.form.get("count")
-        mode = request.form.get("mode", "practice")   # exam/practice
-        prev_score = request.form.get("score")        # for adaptive
+        mode = request.form.get("mode", "practice")   
+        prev_score = request.form.get("score") 
+
         count = int(count) if count else 5
+
         # ✅ Adaptive Difficulty
         if difficulty == "Adaptive" and prev_score:
             try:
@@ -41,6 +37,7 @@ def index():
                     difficulty = "Medium"
             except:
                 difficulty = "Medium"
+
         topic = request.form.get("topic", "").strip()
 
         pdf_file = request.files.get("pdf_file")
@@ -78,11 +75,9 @@ def index():
             extracted_text = pytesseract.image_to_string(img, lang="eng")
             source_used = "Image (OCR)"
 
-
-        
-
         # ✅ LIMIT extracted text (prevents 413 error)
         extracted_text = extracted_text.strip()[:6000]
+
         # ✅ Map level to detailed instruction
         level_instruction = ""
 
@@ -102,53 +97,54 @@ def index():
                 * Creating: Scenario-based
             - Maintain the exact tone and difficulty of the selected level.
             """
+
         # ✅ Build prompt
         if extracted_text:
             prompt = f"""
-        You are an expert exam question setter.
+            You are an expert exam question setter.
 
-        Task:
-        Generate exactly {count} high-quality MCQs from the given text.
+            Task:
+            Generate exactly {count} high-quality MCQs from the given text.
 
-        {level_instruction}
+            {level_instruction}
 
-        Rules:
-        1. Output format MUST be:
-        Q1) ...
-        A) ...
-        B) ...
-        C) ...
-        D) ...
-        Answer: <A/B/C/D>
-        Explanation: <1 line>
+            Rules:
+            1. Output format MUST be:
+            Q1) ...
+            A) ...
+            B) ...
+            C) ...
+            D) ...
+            Answer: <A/B/C/D>
+            Explanation: <1 line>
 
-        2. Questions must be from the text only.
-        3. Do not repeat questions.
-        4. Do not add extra commentary.
-        5. Add 1-2 trusted reference links (Wikipedia, GeeksforGeeks, official docs)
-        TEXT:
-        {extracted_text}
-        """
+            2. Questions must be from the text only.
+            3. Do not repeat questions.
+            4. Do not add extra commentary.
+            5. Add 1-2 trusted reference links (Wikipedia, GeeksforGeeks, official docs)
+            
+            TEXT:
+            {extracted_text}
+            """
         else:
             prompt = f"""
-        You are an expert exam question setter.
+            You are an expert exam question setter.
 
-        Generate exactly {count} MCQs on this topic: {topic}
-        {level_instruction}
+            Generate exactly {count} MCQs on this topic: {topic}
+            {level_instruction}
 
-        Format:
-        Q1) ...
-        A) ...
-        B) ...
-        C) ...
-        D) ...
-        Answer: <A/B/C/D>
-        Explanation:
-        - Why correct answer is right
-        - Why other options are wrong (brief)
-        5. Add 1-2 trusted reference links (Wikipedia, GeeksforGeeks, official docs)
-        """
-
+            Format:
+            Q1) ...
+            A) ...
+            B) ...
+            C) ...
+            D) ...
+            Answer: <A/B/C/D>
+            Explanation:
+            - Why correct answer is right
+            - Why other options are wrong (brief)
+            5. Add 1-2 trusted reference links (Wikipedia, GeeksforGeeks, official docs)
+            """
 
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -163,7 +159,6 @@ def index():
 
     return render_template("index.html", mcqs=mcqs)
 
-from flask import jsonify
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -172,48 +167,69 @@ def chat():
     user_message = data.get("message")
     context = data.get("context")
     lang = data.get("lang", "en")
-    if lang == "hi":
+
+    if "translate" in user_message.lower():
         prompt = f"""
-    You are a helpful teacher who explains in simple Hindi.
+        You are a STRICT translation engine.
 
-    Context:
-    {context}
+        Translate the text EXACTLY into {"pure Hindi (Devanagari script only, NOT Hinglish)" if lang=="hi" else "English"}.
+        
+        ABSOLUTE RULES (DO NOT BREAK):
+        1. ONLY translate the given text.
+        2. DO NOT explain anything.
+        3. DO NOT add examples.
+        4. DO NOT add words like "beta", "namaste", etc.
+        5. DO NOT change structure or format.
+        6. DO NOT add Answer or Explanation if not present.
+        7. DO NOT modify numbering (Q1, A, B, etc).
 
-    Student Question:
-    {user_message}
+        OUTPUT MUST LOOK EXACTLY SAME FORMAT, ONLY LANGUAGE CHANGED.
 
-    Explain in simple Hindi (Hinglish allowed).
-    Make it easy for Indian students.
-    """
+        TEXT:
+        {context}
+        """
+
+    elif lang == "hi":
+        prompt = f"""
+        You are a helpful teacher who explains in simple Hindi.
+
+        Context:
+        {context}
+
+        Student Question:
+        {user_message}
+
+        Explain in simple Hindi (Hinglish allowed).
+        Make it easy for Indian students.
+        """
     else:
         prompt = f"""
-    You are a helpful teacher.
+        You are a helpful teacher.
 
-    Context:
-    {context}
+        Context:
+        {context}
 
-    Student Question:
-    {user_message}
+        Student Question:
+        {user_message}
 
-    Explain clearly in simple English.
+        Explain clearly in simple English.
 
-    Also include:
-    - Why correct answer is right
-    - Why other options are wrong
-    - Short concept summary
-    """
+        Also include:
+        - Why correct answer is right
+        - Why other options are wrong
+        - Short concept summary
+        """
 
     response = client.chat.completions.create(
         model="llama-3.1-8b-instant",
+        temperature=0,   # 🔥 forces strict translation (no creativity)
         messages=[{"role": "user", "content": prompt}]
     )
 
     reply = response.choices[0].message.content
 
-    # ✅ Add basic sources (you can improve later)
     sources = []
 
-    # If context came from MCQs (file-based)
     if context:
         if "PDF File" in context:
             sources.append("Uploaded PDF File")
@@ -224,7 +240,6 @@ def chat():
         else:
             sources.append("Generated from provided content")
 
-    # Optional fallback (for topic-based answers)
     if not sources:
         sources = [
             "https://en.wikipedia.org/wiki/" + user_message.replace(" ", "_"),
@@ -235,5 +250,6 @@ def chat():
         "reply": reply,
         "sources": sources
     })
+
 if __name__ == "__main__":
     app.run(debug=True)
