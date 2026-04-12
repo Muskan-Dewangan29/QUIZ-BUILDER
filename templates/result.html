@@ -12,7 +12,91 @@
         opacity: 0;
         animation: navDrop 0.8s ease forwards;
     }
+    .resize-handle {
+    position: absolute;
+    background: transparent;
+    z-index: 10000;
+}
+@keyframes blinkPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(13,110,253, 0.6);
+    }
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 0 20px rgba(13,110,253, 0.9);
+    }
+}
 
+.bot-icon {
+    display: inline-block;
+    animation: blinkPulse 1.5s infinite ease-in-out;
+}
+/* Edges */
+.resize-handle.top {
+    top: -3px;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    cursor: n-resize;
+}
+
+.resize-handle.bottom {
+    bottom: -3px;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    cursor: s-resize;
+}
+
+.resize-handle.left {
+    left: -3px;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: w-resize;
+}
+
+.resize-handle.right {
+    right: -3px;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: e-resize;
+}
+
+/* Corners */
+.resize-handle.top-left {
+    top: -3px;
+    left: -3px;
+    width: 10px;
+    height: 10px;
+    cursor: nw-resize;
+}
+
+.resize-handle.top-right {
+    top: -3px;
+    right: -3px;
+    width: 10px;
+    height: 10px;
+    cursor: ne-resize;
+}
+
+.resize-handle.bottom-left {
+    bottom: -3px;
+    left: -3px;
+    width: 10px;
+    height: 10px;
+    cursor: sw-resize;
+}
+
+.resize-handle.bottom-right {
+    bottom: -3px;
+    right: -3px;
+    width: 10px;
+    height: 10px;
+    cursor: se-resize;
+}
     @keyframes navDrop {
         to {
             transform: translateY(0);
@@ -215,6 +299,34 @@
         });
         document.getElementById("performanceMsg").innerText = "Start answering to see performance...";
     }
+    function translateQuestion(index, text, lang) {
+
+    const answerDiv = document.getElementById("ans-" + index);
+    const card = answerDiv.closest(".bg-dark");
+    const questionDiv = card.querySelector("div[style*='white-space']");
+
+    fetch("/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: lang === "hi" ? "Translate this to Hindi" : "Translate this to English",
+            context: text,
+            lang: lang
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        questionDiv.innerText = data.reply;
+
+// ✅ DO NOT TOUCH ANSWER HERE
+const answerDiv = document.getElementById("ans-" + index);
+if (answerDiv) {
+    answerDiv.dataset.translated = ""; // reset
+}
+    });
+}
     function explainHindi(question, answer) {
 
     const fullContext = question + "\n\n" + answer;
@@ -274,20 +386,51 @@
         window.speechSynthesis.speak(speech);
     }
     // Toggle one answer only
-    function toggleOneAnswer(i) {
-        const ans = document.getElementById("ans-" + i);
-        const btn = document.getElementById("btn-" + i);
+function toggleOneAnswer(i) {
+    const ans = document.getElementById("ans-" + i);
+    const btn = document.getElementById("btn-" + i);
 
-        if (!ans || !btn) return;
+    if (!ans || !btn) return;
 
-        if (ans.style.display === "none") {
-            ans.style.display = "block";
-            btn.innerText = "🙈 Hide Answer";
-        } else {
-            ans.style.display = "none";
-            btn.innerText = "👁️ Reveal Answer";
+    if (ans.style.display === "none") {
+
+        // ✅ If Hindi mode → translate answer NOW
+      if (questionLanguage[i] === "hi" && !ans.dataset.translated) {
+
+    // ✅ ALWAYS use ORIGINAL answer from raw MCQs
+    const rawText = document.getElementById("rawMcqs").innerText;
+    const parts = rawText.split(/\n(?=Q\d+\b)/g);
+    const currentQ = parts[i];
+
+    let answerMatch = currentQ.match(/Answer:.*(\nExplanation:.*)?/is);
+    let originalAnswer = answerMatch ? answerMatch[0].trim() : ans.innerText;
+
+    fetch("/chat", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: "Translate this answer to Hindi",
+            context: originalAnswer,
+            lang: "hi"
+        })
+    })
+            .then(res => res.json())
+            .then(data => {
+                ans.innerText = data.reply;
+                ans.dataset.translated = "true"; // prevent re-translation
+            });
         }
+
+        ans.style.display = "block";
+        btn.innerText = "🙈 Hide Answer";
+
+    } else {
+        ans.style.display = "none";
+        btn.innerText = "👁️ Reveal Answer";
     }
+}
 
     // Prevent HTML breaking if model returns < > etc.
     function escapeHtml(text) {
@@ -491,7 +634,19 @@ function downloadPDF() {
 
     const lines = doc.splitTextToSize(text, 180);
 
-    doc.text(lines, 10, 10);
+    let y = 10;
+    const lineHeight = 7;
+    const pageHeight = doc.internal.pageSize.height;
+
+    lines.forEach(line => {
+        if (y + lineHeight > pageHeight - 10) {
+            doc.addPage();   // ✅ new page
+            y = 10;
+        }
+
+        doc.text(line, 10, y);
+        y += lineHeight;
+    });
 
     doc.save("MCQs.pdf");
 }
@@ -519,24 +674,25 @@ let questionLanguage = {};
         // ✅ FORCE UI update immediately
         updateUI();
     }
-    function toggleLanguage(index) {
+function toggleLanguage(index) {
     const card = document.getElementById("ans-" + index).closest(".bg-dark");
     const questionDiv = card.querySelector("div[style*='white-space']");
-
-    if (!questionDiv) return;
+    const answerDiv = document.getElementById("ans-" + index);
 
     let isHindi = questionLanguage[index] === "hi";
 
     if (!isHindi) {
-        // Convert EN → HI
+        // ✅ Translate ONLY question (not answer)
         translateQuestion(index, questionDiv.innerText, "hi");
+
         questionLanguage[index] = "hi";
         document.getElementById("lang-" + index).innerText = "🌐 HI → EN";
+
     } else {
-        // Convert HI → EN
-        translateQuestion(index, questionDiv.innerText, "en");
+        // ✅ Back to English (reload original from raw)
+        renderMcqs();
+
         questionLanguage[index] = "en";
-        document.getElementById("lang-" + index).innerText = "🌐 EN → HI";
     }
 }
 function selectOption(qIndex, selected) {
@@ -749,6 +905,8 @@ document.addEventListener("mouseup", () => {
     opacity: 0;
     transition: all 0.3s ease;
     color:white;
+    resize: both; overflow: auto;
+    
 ">
 
     <div id="chatHeader" class="d-flex justify-content-between align-items-center mb-2" style="cursor:move;">
@@ -786,6 +944,14 @@ document.addEventListener("mouseup", () => {
         <button class="btn btn-dark" onclick="sendMessage()">Send</button>
     </div>
 </div> <!-- CLOSE chatPopup properly -->
+<div class="resize-handle top"></div>
+<div class="resize-handle right"></div>
+<div class="resize-handle bottom"></div>
+<div class="resize-handle left"></div>
+<div class="resize-handle top-left"></div>
+<div class="resize-handle top-right"></div>
+<div class="resize-handle bottom-left"></div>
+<div class="resize-handle bottom-right"></div>
 </div>
 <div style="position:fixed; bottom:20px; right:20px; z-index:9999;">
     
@@ -800,7 +966,7 @@ document.addEventListener("mouseup", () => {
         box-shadow:0 4px 12px rgba(0,0,0,0.3);
         position:relative;
     ">
-        💬
+        <span class="bot-icon">💬</span>
         <span id="chatBadge" style="
             position:absolute;
             top:-5px;
@@ -862,6 +1028,72 @@ function applyTheme() {
         if (btn) btn.innerText = "🌙";
     }
 }
+const popup = document.getElementById("chatPopup");
+const handles = document.querySelectorAll(".resize-handle");
+
+handles.forEach(handle => {
+    handle.addEventListener("mousedown", function (e) {
+        e.preventDefault();
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+
+        const startWidth = popup.offsetWidth;
+        const startHeight = popup.offsetHeight;
+        const startLeft = popup.offsetLeft;
+        const startTop = popup.offsetTop;
+
+        function resize(e) {
+            let dx = e.clientX - startX;
+            let dy = e.clientY - startY;
+
+            if (handle.classList.contains("right")) {
+                popup.style.width = startWidth + dx + "px";
+            }
+            if (handle.classList.contains("left")) {
+                popup.style.width = startWidth - dx + "px";
+                popup.style.left = startLeft + dx + "px";
+            }
+            if (handle.classList.contains("bottom")) {
+                popup.style.height = startHeight + dy + "px";
+            }
+            if (handle.classList.contains("top")) {
+                popup.style.height = startHeight - dy + "px";
+                popup.style.top = startTop + dy + "px";
+            }
+
+            // Corners (combined)
+            if (handle.classList.contains("top-left")) {
+                popup.style.width = startWidth - dx + "px";
+                popup.style.height = startHeight - dy + "px";
+                popup.style.left = startLeft + dx + "px";
+                popup.style.top = startTop + dy + "px";
+            }
+            if (handle.classList.contains("top-right")) {
+                popup.style.width = startWidth + dx + "px";
+                popup.style.height = startHeight - dy + "px";
+                popup.style.top = startTop + dy + "px";
+            }
+            if (handle.classList.contains("bottom-left")) {
+                popup.style.width = startWidth - dx + "px";
+                popup.style.height = startHeight + dy + "px";
+                popup.style.left = startLeft + dx + "px";
+            }
+            if (handle.classList.contains("bottom-right")) {
+                popup.style.width = startWidth + dx + "px";
+                popup.style.height = startHeight + dy + "px";
+            }
+        }
+
+        function stopResize() {
+            document.removeEventListener("mousemove", resize);
+            document.removeEventListener("mouseup", stopResize);
+        }
+
+        document.addEventListener("mousemove", resize);
+        document.addEventListener("mouseup", stopResize);
+    });
+});
 </script>
 </body>
 </html>
