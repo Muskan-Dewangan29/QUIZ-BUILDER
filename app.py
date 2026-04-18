@@ -6,7 +6,7 @@ from PyPDF2 import PdfReader
 from docx import Document
 import pytesseract
 from PIL import Image
-import tempfile
+import re
 
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
@@ -50,6 +50,7 @@ def index():
         extracted_text = ""
         source_used = "Topic"
 
+       
         # ✅ TXT
         if txt_file and txt_file.filename != "":
             extracted_text = txt_file.read().decode("utf-8", errors="ignore")
@@ -104,46 +105,133 @@ def index():
             You are an expert exam question setter.
 
             Task:
-            Generate exactly {count} high-quality MCQs from the given text.
+            Generate exactly {count} HIGH-QUALITY questions from the given text.
+
+            IMPORTANT:
+            Generate a MIX of different question types, not only MCQs.
+
+            Include:
+            1. MCQs (Multiple Choice Questions)
+            2. Fill in the blanks
+            3. Short answer questions
+            4. One word answer questions
+            5. Case study based questions
+            6. True/False
+            7. Assertion-Reason (if applicable)
 
             {level_instruction}
 
-            Rules:
-            1. Output format MUST be:
-            Q1) ...
+            FORMAT:
+
+            Q1) (MCQ)
+            Question...
             A) ...
             B) ...
             C) ...
             D) ...
             Answer: <A/B/C/D>
-            Explanation: <1 line>
+            Explanation: ...
 
-            2. Questions must be from the text only.
-            3. Do not repeat questions.
-            4. Do not add extra commentary.
-            5. Add 1-2 trusted reference links (Wikipedia, GeeksforGeeks, official docs)
-            
+            Q2) (Fill in the Blank)
+            Question with ______
+            Answer: ...
+
+            Q3) (Short Answer)
+            Question...
+            Answer: ...
+
+            Q4) (One Word)
+            Question...
+            Answer: ...
+
+            Q5) (Case Study)
+            <Small paragraph>
+            Questions:
+            a) ...
+            b) ...
+            Answers:
+            a) ...
+            b) ...
+
+            Q6) (True/False)
+            Statement...
+            Answer: True/False
+
+            Q7) (Assertion-Reason)
+            Assertion: ...
+            Reason: ...
+            Options:
+            A) Both true
+            B) Both false
+            C) Assertion true, Reason false
+            D) Assertion false, Reason true
+            Answer: ...
+
+            RULES:
+            1. Questions must be from the text only
+            2. Do not repeat questions
+            3. Do not add extra commentary
+            4. Keep language simple and exam-oriented
+            5. Add 1-2 trusted reference links
+            STRICT FORMATTING RULES:
+            1. DO NOT use ** or any markdown symbols
+            2. DO NOT add extra blank lines between questions
+            3. DO NOT mention marks like (5 marks), (2 marks), etc.
+            4. Keep everything in plain text only
+            5. Each question must start exactly like: Q1) (Type)
+            6. Question should be in the same line, no unnecessary spacing
+            7. Do NOT add notes or instructions like [Note: ...]
             TEXT:
             {extracted_text}
             """
         else:
-            prompt = f"""
+           prompt = f"""
             You are an expert exam question setter.
 
-            Generate exactly {count} MCQs on this topic: {topic}
+            Generate exactly {count} HIGH-QUALITY questions on this topic: {topic}
+
+            IMPORTANT:
+            Generate a MIX of different question types.
+
+            Include:
+            - MCQs
+            - Fill in the blanks
+            - Short answer
+            - One word
+            - Case study
+            - True/False
+            - Assertion-Reason
+
             {level_instruction}
 
-            Format:
-            Q1) ...
-            A) ...
-            B) ...
-            C) ...
-            D) ...
-            Answer: <A/B/C/D>
-            Explanation:
-            - Why correct answer is right
-            - Why other options are wrong (brief)
-            5. Add 1-2 trusted reference links (Wikipedia, GeeksforGeeks, official docs)
+            Follow this format:
+
+            Q1) (MCQ)
+            ...
+
+            Q2) (Fill in the Blank)
+            ...
+
+            Q3) 
+            ...
+
+            Q4) (One Word)
+            ...
+
+            Q5) (Case Study)
+            ...
+
+            Q6) (True/False)
+            ...
+
+            Q7) (Assertion-Reason)
+            ...
+
+            RULES:
+            1. Do not repeat questions
+            2. Keep exam-level quality
+            3. Keep answers accurate
+            4. Add 1-2 trusted reference links
             """
 
         response = client.chat.completions.create(
@@ -153,6 +241,7 @@ def index():
 
         mcqs = response.choices[0].message.content
         mcqs = f"Source Used: {source_used} | Mode: {mode} | Level: {difficulty}\n\n" + mcqs
+
 
     if mcqs:
         return render_template("result.html", mcqs=mcqs, mode=mode)
