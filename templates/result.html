@@ -1,117 +1,133 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Generated MCQs</title>
+    <title>Generated Questions</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
-    #topNav {
-        transform: translateY(-30px);
-        opacity: 0;
-        animation: navDrop 0.8s ease forwards;
-    }
-    .resize-handle {
-    position: absolute;
-    background: transparent;
-    z-index: 10000;
-}
-@keyframes blinkPulse {
-    0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 rgba(13,110,253, 0.6);
-    }
-    50% {
-        transform: scale(1.15);
-        box-shadow: 0 0 20px rgba(13,110,253, 0.9);
-    }
-}
-
-.bot-icon {
-    display: inline-block;
-    animation: blinkPulse 1.5s infinite ease-in-out;
-}
-/* Edges */
-.resize-handle.top {
-    top: -3px;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    cursor: n-resize;
-}
-
-.resize-handle.bottom {
-    bottom: -3px;
-    left: 0;
-    width: 100%;
-    height: 6px;
-    cursor: s-resize;
-}
-
-.resize-handle.left {
-    left: -3px;
-    top: 0;
-    width: 6px;
-    height: 100%;
-    cursor: w-resize;
-}
-
-.resize-handle.right {
-    right: -3px;
-    top: 0;
-    width: 6px;
-    height: 100%;
-    cursor: e-resize;
-}
-
-/* Corners */
-.resize-handle.top-left {
-    top: -3px;
-    left: -3px;
-    width: 10px;
-    height: 10px;
-    cursor: nw-resize;
-}
-
-.resize-handle.top-right {
-    top: -3px;
-    right: -3px;
-    width: 10px;
-    height: 10px;
-    cursor: ne-resize;
-}
-
-.resize-handle.bottom-left {
-    bottom: -3px;
-    left: -3px;
-    width: 10px;
-    height: 10px;
-    cursor: sw-resize;
-}
-
-.resize-handle.bottom-right {
-    bottom: -3px;
-    right: -3px;
-    width: 10px;
-    height: 10px;
-    cursor: se-resize;
-}
-    @keyframes navDrop {
-        to {
-            transform: translateY(0);
-            opacity: 1;
+        #topNav {
+            transform: translateY(-30px);
+            opacity: 0;
+            animation: navDrop 0.8s ease forwards;
         }
-    }
 
-    .navbar-brand {
-        animation: glowPulse 2.5s infinite ease-in-out;
-    }
+        .resize-handle {
+            position: absolute;
+            background: transparent;
+            z-index: 10000;
+        }
 
-    @keyframes glowPulse {
-        0%, 100% { text-shadow: 0 0 0 rgba(255,255,255,0); }
-        50% { text-shadow: 0 0 12px rgba(255,255,255,0.35); }
-    }
+        @keyframes blinkPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 rgba(13,110,253, 0.6);
+            }
+            50% {
+                transform: scale(1.15);
+                box-shadow: 0 0 20px rgba(13,110,253, 0.9);
+            }
+        }
+
+        .logo-video {
+            height: 70px;   
+            width: auto;
+            border-radius: 8px;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-video:hover {
+            transform: scale(1.1);
+        }
+
+        .bot-icon {
+            display: inline-block;
+            animation: blinkPulse 1.5s infinite ease-in-out;
+        }
+
+        /* Edges */
+        .resize-handle.top {
+            top: -3px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            cursor: n-resize;
+        }
+
+        .resize-handle.bottom {
+            bottom: -3px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            cursor: s-resize;
+        }
+
+        .resize-handle.left {
+            left: -3px;
+            top: 0;
+            width: 6px;
+            height: 100%;
+            cursor: w-resize;
+        }
+
+        .resize-handle.right {
+            right: -3px;
+            top: 0;
+            width: 6px;
+            height: 100%;
+            cursor: e-resize;
+        }
+
+        /* Corners */
+        .resize-handle.top-left {
+            top: -3px;
+            left: -3px;
+            width: 10px;
+            height: 10px;
+            cursor: nw-resize;
+        }
+
+        .resize-handle.top-right {
+            top: -3px;
+            right: -3px;
+            width: 10px;
+            height: 10px;
+            cursor: ne-resize;
+        }
+
+        .resize-handle.bottom-left {
+            bottom: -3px;
+            left: -3px;
+            width: 10px;
+            height: 10px;
+            cursor: sw-resize;
+        }
+
+        .resize-handle.bottom-right {
+            bottom: -3px;
+            right: -3px;
+            width: 10px;
+            height: 10px;
+            cursor: se-resize;
+        }
+
+        @keyframes navDrop {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .navbar-brand {
+            animation: glowPulse 2.5s infinite ease-in-out;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { text-shadow: 0 0 0 rgba(255,255,255,0); }
+            50% { text-shadow: 0 0 12px rgba(255,255,255,0.35); }
+        }
     </style>
 </head>
 
@@ -120,16 +136,16 @@
 <!-- Navbar -->
 <nav class="navbar navbar-dark px-4 py-3 shadow-sm" id="topNav" style="background: linear-gradient(90deg, #0f172a, #1e293b, #0b1324);">
     <div class="d-flex flex-column">
-        <span class="navbar-brand fw-bold fs-4 mb-0">GEM AI</span>
-        <small class="text-light opacity-75">Generated Exam MCQs using AI</small>
+        <video class="logo-video" autoplay muted loop playsinline>
+            <source src="{{ url_for('static', filename='logo.mp4') }}" type="video/mp4">
+        </video>
     </div>
     <div class="d-flex align-items-center gap-3">
-    <span class="text-light small opacity-75">Upload • Generate • Learn</span>
-
-    <button onclick="toggleTheme()" class="btn btn-sm btn-light rounded-3">
-        🌙
-    </button>
-</div>
+        <span class="text-light small opacity-75">Upload • Generate • Learn</span>
+        <button onclick="toggleTheme()" class="btn btn-sm btn-light rounded-3">
+            🌙
+        </button>
+    </div>
 </nav>
 
 <div class="container mt-5">
@@ -143,7 +159,7 @@
 
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="d-flex align-items-center gap-2">
-                <h5 class="mb-0 fw-bold">Generated MCQs</h5>
+                <h5 class="mb-0 fw-bold">Generated Questions</h5>
                 <button class="btn btn-success btn-sm" onclick="downloadPDF()">📥 Download</button>
                 <button class="btn btn-danger btn-sm ms-2" onclick="regenerateWeak()">
                     🔁 Practice Weak Areas
@@ -152,7 +168,16 @@
             <small class="text-muted">Click “Reveal Answer” under each question</small>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-3">
-
+            <select id="questionFilter" class="form-select w-auto ms-2" onchange="filterQuestions()">
+                <option value="all">All Questions</option>
+                <option value="mcq">MCQ</option>
+                <option value="fill">Fill in the Blank</option>
+                <option value="short">Short Answer</option>
+                <option value="oneword">One Word</option>
+                <option value="case">Case Study</option>
+                <option value="assertion">Assertion Reason</option>
+                <option value="truefalse">True/False</option>
+            </select>
             <div>
                 <span class="badge bg-primary">Score: <span id="score">0</span></span>
                 <span class="badge bg-success ms-2">XP: <span id="xp">0</span></span>
@@ -221,6 +246,37 @@
             document.close();
         });
     }
+    function checkTextAnswer(index) {
+        const input = document.getElementById("input-" + index);
+        const userAns = input.value.trim().toLowerCase();
+
+        const answerDiv = document.getElementById("ans-" + index);
+        if (!answerDiv) return;
+
+        const correctMatch = answerDiv.innerText.match(/Answer:\s*(.*)/i);
+        if (!correctMatch) return;
+
+        const correctAns = correctMatch[1].trim().toLowerCase();
+
+        const card = answerDiv.closest(".bg-dark");
+
+        // Disable input after attempt
+        input.disabled = true;
+
+        if (userAns && correctAns.includes(userAns)) {
+            input.style.border = "2px solid green";
+            score += 1;
+            xp += 10;
+        } else {
+            input.style.border = "2px solid red";
+
+            const questionText = card.innerText.split("\n")[0];
+            trackWeakArea(questionText);
+        }
+
+        answered++;
+        updateUI();
+    }
     function renderMcqs() {
         const raw = document.getElementById("rawMcqs");
         const container = document.getElementById("mcqContainer");
@@ -233,8 +289,7 @@
             return;
         }
         // Split questions by Q1, Q2, Q3...
-        const parts = text.split(/\n(?=Q\d+\b)/g);
-
+        const parts = text.split(/(?=Q\d+\))/g);
         container.innerHTML = "";
         totalQuestions = parts.filter(q => /^Q\d+/i.test(q.trim())).length;
         parts.forEach((q, index) => {
@@ -242,8 +297,7 @@
             if (!q) return;
 
             // ✅ Skip non-question blocks like "Source used"
-            if (!/^Q\d+\b/i.test(q)) return;
-
+            if (!/^Q\d+\)/i.test(q.trim())) return;
 
             // Extract Answer + Explanation block
             let answerBlockMatch = q.match(/Answer:.*(\nExplanation:.*)?/is);
@@ -252,15 +306,40 @@
             // Remove Answer + Explanation from question block
             let questionText = q.replace(/Answer:.*(\nExplanation:.*)?/is, "").trim();
 
+           let type = "mcq";
 
+    if (/Fill in the Blank/i.test(q)) type = "fill";
+    else if (/Assertion.*Reason/i.test(q)) type = "assertion";
+    else if (/True\s*\/?\s*False/i.test(q)) type = "truefalse";
+    else if (/One Word/i.test(q)) type = "oneword";
+    else if (/Short Answer/i.test(q)) type = "short";
+    else if (/Case Study/i.test(q)) type = "case";
             // Card UI
             const card = document.createElement("div");
             card.className = "bg-dark text-light p-4 rounded-4 mb-3";
+            card.setAttribute("data-type", type);   // ✅ ADD THIS LINE
 
-            card.innerHTML = `
+            let questionHTML = `
                 <div style="white-space: pre-wrap; font-size: 15px;">
-                    ${formatOptions(questionText, index)}
+                    ${type === "mcq" ? formatOptions(questionText, index) : escapeHtml(questionText)}
                 </div>
+            `;
+
+            if (type !== "mcq") {
+                questionHTML += `
+                    <input type="text" 
+                        class="form-control mt-3" 
+                        placeholder="Type your answer..."
+                        id="input-${index}">
+                    
+                    <button class="btn btn-success btn-sm mt-2"
+                        onclick="checkTextAnswer(${index})">
+                        ✅ Submit Answer
+                    </button>
+                `;
+            }
+
+            card.innerHTML = questionHTML + `
                 <button class="btn btn-outline-light btn-sm mt-3 rounded-4"
                     onclick="toggleOneAnswer(${index})"
                     id="btn-${index}">
@@ -354,6 +433,20 @@ if (answerDiv) {
 
         // 🔊 Speak Hindi answer
         speakHindi(data.reply);
+    });
+}
+function filterQuestions() {
+    const selected = document.getElementById("questionFilter").value;
+    const cards = document.querySelectorAll("#mcqContainer > div");
+
+    cards.forEach(card => {
+        const type = card.getAttribute("data-type");
+
+        if (selected === "all" || type === selected) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
     });
 }
     function speakHindi(text) {
